@@ -1,0 +1,22 @@
+[package]
+name = "montana-agenda"
+version = "0.1.0"
+description = "Agenda local de Sombreros Montana"
+edition = "2021"
+[lib]
+name = "montana_agenda_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+[[bin]]
+name = "montana-agenda"
+path = "src/main.rs"
+required-features = ["desktop"]
+[features]
+default = []
+desktop = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-notification"]
+[build-dependencies]
+tauri-build = { version = "2", optional = true }
+[dependencies]
+rusqlite = { version = "0.38", features = ["bundled"] }
+serde_json = "1"
+tauri = { version = "2", optional = true }
+tauri-plugin-notification = { version = "2", optional = true }

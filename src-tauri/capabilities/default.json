@@ -1,0 +1,10 @@
+{
+  "identifier": "default",
+  "description": "Permisos mínimos para agenda y recordatorios locales",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-destroy",
+    "notification:default"
+  ]
+}
