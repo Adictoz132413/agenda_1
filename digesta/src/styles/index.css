@@ -1,0 +1,213 @@
+@import '@fontsource-variable/manrope';
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Paleta: neutros cálidos, verde salvia como primario y tonos semánticos sobrios. */
+:root {
+  --bg: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #efece5;
+  --surface-3: #e6e2d9;
+  --text: #1d2723;
+  --muted: #66706b;
+  --border: #e2ded4;
+  --primary: #2f5d50;
+  --primary-strong: #234a3f;
+  --primary-soft: #e1ebe6;
+  --on-primary: #ffffff;
+  --good: #3c8a5f;
+  --good-soft: #e2f0e7;
+  --mid: #b97d12;
+  --mid-soft: #f7ebd0;
+  --bad: #c0564c;
+  --bad-soft: #f7e0dc;
+  --none: #858c88;
+  --none-soft: #ebe9e4;
+  --stool: #7a4a26;
+  --shadow: 0 1px 2px rgb(30 40 35 / 0.06), 0 4px 16px rgb(30 40 35 / 0.05);
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0e1311;
+  --surface: #161c19;
+  --surface-2: #1d2521;
+  --surface-3: #26302b;
+  --text: #e7ece9;
+  --muted: #98a29d;
+  --border: #29332e;
+  --primary: #86c0ab;
+  --primary-strong: #a3d3c1;
+  --primary-soft: #1c2e28;
+  --on-primary: #0e1311;
+  --good: #6fc292;
+  --good-soft: #17291f;
+  --mid: #e2ab4b;
+  --mid-soft: #2d2413;
+  --bad: #e8877b;
+  --bad-soft: #33201c;
+  --none: #8d9692;
+  --none-soft: #222a26;
+  --stool: #b07a4f;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 18px rgb(0 0 0 / 0.25);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Manrope Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-mid: var(--mid);
+  --color-mid-soft: var(--mid-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-none: var(--none);
+  --color-none-soft: var(--none-soft);
+  --color-stool: var(--stool);
+  --shadow-card: var(--shadow);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: 'tnum' 0;
+  min-height: 100dvh;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Foco visible y accesible */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Deslizador de intensidad */
+input[type='range'].intensity {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--good) 0%, var(--mid) 55%, var(--bad) 100%);
+}
+input[type='range'].intensity::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 3px solid var(--text);
+  box-shadow: var(--shadow);
+}
+input[type='range'].intensity::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 3px solid var(--text);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.96);
+  }
+  60% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.animate-sheet {
+  animation: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.animate-fade {
+  animation: fade-in 180ms ease-out;
+}
+.animate-pop {
+  animation: pop 220ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet,
+  .animate-fade,
+  .animate-pop {
+    animation: none;
+  }
+}
+
+/* ───────── Impresión (informes PDF) ───────── */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-break {
+    break-before: page;
+  }
+  .print-avoid {
+    break-inside: avoid;
+  }
+}
+.print-only {
+  display: none;
+}
