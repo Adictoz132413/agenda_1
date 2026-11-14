@@ -36,7 +36,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'theme-init.js'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'theme-init.js', 'sw-notifications.js'],
       manifest: {
         id: base,
         name: 'DIGESTA — Mi Diario Digestivo',
@@ -66,6 +66,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        importScripts: ['sw-notifications.js'],
       },
     }),
   ],
