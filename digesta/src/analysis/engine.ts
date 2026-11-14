@@ -396,12 +396,15 @@ export function analyze(input: AnalysisInput): AnalysisResult {
     signals.sort((a, b) => strengthRank(b) - strengthRank(a));
     const relevant = signals.filter((s) => s.strength === 'repetida' || s.strength === 'posible');
     const isolatedHere = signals.filter((s) => s.strength === 'aislada');
+    // Una diferencia por cantidad o preparación sólo se informa si el propio alimento
+    // muestra una señal para ese síntoma (evita atribuir efectos de alimentos acompañantes).
+    const keptInsights = insights.filter((i) => relevant.some((s) => s.outcome === i.outcome));
     const n = exps.length;
     const completeN = Math.max(0, ...OUTCOMES.flatMap((o) => o.windows.map((w) => exps.filter((e) => followed.get(`${o.key}|${w}`)![e.mealIdx] !== null).length)));
     let suggestion: ToleranceStatus;
     if (completeN < 3) suggestion = 'sin_datos';
     else if (relevant.some((s) => s.strength === 'repetida')) suggestion = 'posible_mala';
-    else if (relevant.length || insights.length) suggestion = 'a_medias';
+    else if (relevant.length || keptInsights.length) suggestion = 'a_medias';
     else suggestion = 'tolero_bien';
 
     const evidence = evidenceFor(completeN);
@@ -414,13 +417,13 @@ export function analyze(input: AnalysisInput): AnalysisResult {
       quantities,
       preparations,
       signals: [...relevant, ...isolatedHere],
-      insights,
+      insights: keptInsights,
       suggestion,
       evidence,
-      summary: profileSummary(name, n, completeN, suggestion, relevant, insights),
+      summary: profileSummary(name, n, completeN, suggestion, relevant, keptInsights),
     });
     allSignals.push(...relevant);
-    allInsights.push(...insights);
+    allInsights.push(...keptInsights);
     isolatedAll.push(...isolatedHere);
   }
 

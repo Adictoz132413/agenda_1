@@ -4,7 +4,7 @@
  * Sólo escribe en la base `digesta-demo` (nunca en tus datos reales).
  * Incluye patrones sembrados a propósito para mostrar cómo funciona el análisis:
  *  - Leche → hinchazón entre 1 y 4 horas después (frecuente).
- *  - Fríjoles en cantidad abundante → gases entre 6 y 20 horas (en poca cantidad casi nunca).
+ *  - Fríjoles en cantidad abundante → gases entre 2 y 5 horas (en poca cantidad casi nunca).
  *  - Ají / salsa picante → acidez entre 1 y 3 horas.
  */
 import type { DigestaDB } from './db';
@@ -104,10 +104,11 @@ export async function seedDemo(db: DigestaDB, days = 60, now = Date.now()): Prom
     for (const m of dayMeals) {
       const keys = new Set(m.itemKeys);
       if (keys.has('leche') && chance(0.72)) addSymptom('hinchazon', m.at + (1 + r() * 3) * HOUR, 5 + Math.floor(r() * 3), 90 + Math.floor(r() * 120), 'periumbilical');
-      const frijoles = m.items.find((i) => i.key === 'frijoles');
+      // Fríjoles como plato o como ingrediente (p. ej. calentado): más gases cuanto mayor la porción.
+      const frijoles = m.items.find((i) => i.key === 'frijoles' || (i.ingredients ?? []).some((x) => foodKey(x) === 'frijoles'));
       if (frijoles) {
-        const p = frijoles.quantity === 'abundante' ? 0.85 : 0.1;
-        if (chance(p)) addSymptom('gases', m.at + (6 + r() * 14) * HOUR, 4 + Math.floor(r() * 3), 120);
+        const p = frijoles.quantity === 'abundante' ? 0.85 : frijoles.quantity === 'poca' ? 0.1 : 0.55;
+        if (chance(p)) addSymptom('gases', m.at + (2 + r() * 3) * HOUR, 4 + Math.floor(r() * 3), 120);
       }
       if ((keys.has('aji') || keys.has('salsa picante')) && chance(0.65)) addSymptom('acidez', m.at + (1 + r() * 2) * HOUR, 4 + Math.floor(r() * 4), 60, 'epigastrio');
       if (keys.has('papas fritas') && chance(0.4)) {

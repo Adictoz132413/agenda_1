@@ -168,6 +168,7 @@ function FoodDetail({ foodKey }: { foodKey: string }) {
   const note = notes?.get(foodKey);
   const [noteText, setNoteText] = useState('');
   const [noteDirty, setNoteDirty] = useState(false);
+  const [showIsolated, setShowIsolated] = useState(false);
 
   useEffect(() => {
     if (!noteDirty) setNoteText(note?.note ?? '');
@@ -225,6 +226,8 @@ function FoodDetail({ foodKey }: { foodKey: string }) {
     else toast('Esa comida ya no existe', { tone: 'error' });
   };
 
+  const relevant = profile.signals.filter((s) => s.strength !== 'aislada');
+  const isolated = profile.signals.filter((s) => s.strength === 'aislada');
   const totalQ = Object.values(profile.quantities).reduce((a, b) => a + (b ?? 0), 0);
   const prepEntries = Object.entries(profile.preparations).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0)) as [string, number][];
 
@@ -285,7 +288,7 @@ function FoodDetail({ foodKey }: { foodKey: string }) {
       </Card>
 
       <Card className="mt-3">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-extrabold">Sugerencia automática</h2>
           <Badge tone={toneOf(profile.suggestion)}>{TOLERANCE[profile.suggestion].label}</Badge>
         </div>
@@ -297,14 +300,33 @@ function FoodDetail({ foodKey }: { foodKey: string }) {
       </Card>
 
       <SectionTitle>Señales observadas</SectionTitle>
-      {profile.signals.length ? (
+      {relevant.length ? (
         <ul className="space-y-3">
-          {profile.signals.map((s) => (
+          {relevant.map((s) => (
             <SignalCard key={`${s.outcome}|${s.window}`} signal={s} showFood={false} />
           ))}
         </ul>
       ) : (
-        <p className="px-1 text-sm text-muted">No se registraron síntomas ni deposiciones alteradas en las ventanas posteriores a este alimento.</p>
+        <p className="px-1 text-sm text-muted">
+          {isolated.length ? 'No hay asociaciones que se repitan con este alimento.' : 'No se registraron síntomas ni deposiciones alteradas en las ventanas posteriores a este alimento.'}
+        </p>
+      )}
+      {isolated.length > 0 && (
+        <div className="mt-3">
+          <Button variant="secondary" block onClick={() => setShowIsolated((v) => !v)} aria-expanded={showIsolated}>
+            {showIsolated ? 'Ocultar' : 'Ver'} observaciones aisladas ({isolated.length})
+          </Button>
+          {showIsolated && (
+            <>
+              <p className="mt-2 px-1 text-[12px] text-muted">Un solo episodio o muy pocas exposiciones: no permiten sacar conclusiones.</p>
+              <ul className="mt-2 space-y-3">
+                {isolated.map((s) => (
+                  <SignalCard key={`${s.outcome}|${s.window}`} signal={s} showFood={false} />
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
       )}
 
       {profile.insights.length > 0 && (
