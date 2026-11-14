@@ -283,17 +283,16 @@ function DayDetail({ day }: { day: string }) {
       )}
 
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <Button variant="soft" size="sm" onClick={() => entry.openMeal()}>
+        <Button variant="soft" size="sm" onClick={() => entry.openMeal({ at: atForDay })}>
           <Plus size={14} /> Comida
         </Button>
-        <Button variant="soft" size="sm" onClick={() => entry.openStool()}>
+        <Button variant="soft" size="sm" onClick={() => entry.openStool(undefined, { at: atForDay })}>
           <Plus size={14} /> Deposición
         </Button>
         <Button variant="soft" size="sm" onClick={() => entry.openSymptom({ at: atForDay })}>
           <Plus size={14} /> Síntoma
         </Button>
       </div>
-      {day !== today && <p className="mt-2 px-1 text-xs text-muted">Para registrar en este día, ajusta la fecha dentro del formulario.</p>}
     </div>
   );
 }

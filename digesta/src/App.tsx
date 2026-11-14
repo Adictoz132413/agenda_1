@@ -22,6 +22,7 @@ import { CalendarScreen } from '@/features/calendar/CalendarScreen';
 import { ReportScreen } from '@/features/reports/ReportScreen';
 import { SettingsScreen } from '@/features/settings/SettingsScreen';
 import { Onboarding } from '@/features/settings/Onboarding';
+import { ReminderBanner } from '@/features/settings/ReminderBanner';
 
 const TABS = [
   { path: '/hoy', label: 'Hoy', icon: Home },
@@ -126,6 +127,7 @@ function Shell() {
       {!isReport && <BottomNav active={root} />}
       {ready && !settings.disclaimerAccepted && <Onboarding onAccept={() => updateSettings({ disclaimerAccepted: true })} />}
       <UpdatePrompt />
+      <ReminderBanner />
     </div>
   );
 }

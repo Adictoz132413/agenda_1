@@ -86,6 +86,8 @@ export interface FoodSignal {
   /** Intensidad media de los episodios que siguieron (0–10; 0 si no aplica). */
   avgIntensity: number;
   confounders: Confounder[];
+  /** Otro alimento que parece explicar mejor la señal (presente casi siempre y asociado incluso sin éste). */
+  explainedBy?: { key: string; name: string };
   message: string;
 }
 
@@ -335,6 +337,7 @@ export function analyze(input: AnalysisInput): AnalysisResult {
   const isolatedAll: FoodSignal[] = [];
   const allInsights: ModulationInsight[] = [];
 
+  const raw: RawFood[] = [];
   for (const [key, exps] of byFood) {
     const name = exps[exps.length - 1].name;
     const quantities: FoodProfile['quantities'] = {};
@@ -393,9 +396,16 @@ export function analyze(input: AnalysisInput): AnalysisResult {
       if (best && best.followed > 0) signals.push(best);
     }
 
+    raw.push({ key, name, exps, quantities, preparations, signals, insights });
+  }
+
+  disentangle(raw, followed, mealKeys);
+
+  for (const { key, name, exps, quantities, preparations, signals, insights } of raw) {
     signals.sort((a, b) => strengthRank(b) - strengthRank(a));
     const relevant = signals.filter((s) => s.strength === 'repetida' || s.strength === 'posible');
     const isolatedHere = signals.filter((s) => s.strength === 'aislada');
+    const explainedHere = signals.filter((s) => s.explainedBy && s.strength === 'sin_diferencia');
     // Una diferencia por cantidad o preparación sólo se informa si el propio alimento
     // muestra una señal para ese síntoma (evita atribuir efectos de alimentos acompañantes).
     const keptInsights = insights.filter((i) => relevant.some((s) => s.outcome === i.outcome));
@@ -416,7 +426,7 @@ export function analyze(input: AnalysisInput): AnalysisResult {
       lastAt: exps[exps.length - 1].at,
       quantities,
       preparations,
-      signals: [...relevant, ...isolatedHere],
+      signals: [...relevant, ...explainedHere, ...isolatedHere],
       insights: keptInsights,
       suggestion,
       evidence,
@@ -456,6 +466,71 @@ export function analyze(input: AnalysisInput): AnalysisResult {
     coverage: { trackedDays: sortedDays.length, meals: meals.length, symptomEpisodes, stools: input.stools.length, firstDay: sortedDays[0], lastDay: sortedDays[sortedDays.length - 1] },
     caveats,
   };
+}
+
+interface RawFood {
+  key: string;
+  name: string;
+  exps: Exposure[];
+  quantities: FoodProfile['quantities'];
+  preparations: FoodProfile['preparations'];
+  signals: FoodSignal[];
+  insights: ModulationInsight[];
+}
+
+/**
+ * Separa alimentos que casi siempre se consumen juntos. Si el alimento A sólo
+ * aparece (o casi) junto con B, y B se asocia con el síntoma incluso sin A,
+ * la señal de A se rebaja y se explica. Así se evita culpar al tomate de los
+ * huevos pericos cuando el patrón se explica mejor por la leche del café.
+ */
+function disentangle(raw: RawFood[], followed: Map<string, (OutcomeEvent[] | null)[]>, mealKeys: Set<string>[]) {
+  const byKey = new Map(raw.map((r) => [r.key, r]));
+  for (const f of raw) {
+    f.signals = f.signals.map((s) => {
+      if (s.strength !== 'repetida' && s.strength !== 'posible') return s;
+      const arr = followed.get(`${s.outcome}|${s.window}`)!;
+      const hit = (m: number) => (arr[m]?.length ?? 0) > 0;
+      const rate = (ms: number[]) => (ms.length ? ms.filter(hit).length / ms.length : 0);
+      const fMeals = f.exps.filter((e) => arr[e.mealIdx] !== null).map((e) => e.mealIdx);
+      const hitMeals = fMeals.filter(hit);
+      if (!hitMeals.length) return s;
+      const counts = new Map<string, number>();
+      for (const m of hitMeals) for (const g of mealKeys[m]) if (g !== f.key) counts.set(g, (counts.get(g) ?? 0) + 1);
+      const candidates = [...counts]
+        .filter(([, c]) => c / hitMeals.length >= 0.6)
+        .sort((a, b) => b[1] - a[1])
+        .map(([g]) => g);
+      for (const gk of candidates) {
+        const g = byKey.get(gk);
+        if (!g) continue;
+        const gAlone = g.exps.filter((e) => arr[e.mealIdx] !== null && !mealKeys[e.mealIdx].has(f.key)).map((e) => e.mealIdx);
+        if (gAlone.length < 2 || rate(gAlone) < 0.5) continue;
+        const fAlone = fMeals.filter((m) => !mealKeys[m].has(gk));
+        const fl = f.name.toLowerCase();
+        const gl = g.name.toLowerCase();
+        const ph = outcomeDef(s.outcome).phrase;
+        const k2 = gAlone.filter(hit).length;
+        let note: string;
+        let strength: SignalStrength;
+        if (fAlone.length === 0) {
+          note = `Siempre que comiste ${fl} también consumiste ${gl}, y ${gl} se asocia con ${ph} incluso sin ${fl} (${k2} de ${gAlone.length}). Con estos datos no se pueden separar.`;
+          strength = 'posible';
+        } else if (fAlone.length >= 2 && rate(fAlone) <= 0.25) {
+          note = `Cuando comiste ${fl} sin ${gl}, registraste ${ph} en ${fAlone.filter(hit).length} de ${fAlone.length} ocasiones; con ${gl} sin ${fl}, en ${k2} de ${gAlone.length}. La señal parece explicarse mejor por ${gl}.`;
+          strength = 'sin_diferencia';
+        } else continue;
+        const partial: Omit<FoodSignal, 'message'> = {
+          ...s,
+          strength,
+          explainedBy: { key: gk, name: g.name },
+          confounders: [{ kind: 'alimento', label: `Puede explicarse por ${gl}`, count: hitMeals.length, of: hitMeals.length }, ...s.confounders],
+        };
+        return { ...partial, message: `${signalMessage(partial)} ${note}` };
+      }
+      return s;
+    });
+  }
 }
 
 function strengthRank(s: FoodSignal): number {

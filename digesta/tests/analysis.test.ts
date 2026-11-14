@@ -237,3 +237,46 @@ describe('estadísticas', () => {
     expect(movingAverage([1, null, 3], 2)).toEqual([1, 1, 3]);
   });
 });
+
+describe('separación de alimentos que se consumen juntos', () => {
+  it('no culpa al acompañante cuando otro alimento explica el síntoma', () => {
+    const meals: Meal[] = [];
+    const symptoms: Symptom[] = [];
+    for (let d = 0; d < 16; d++) {
+      const t = T0 + d * D + 8 * H;
+      if (d < 8) meals.push(meal(t, ['Leche', 'Huevos pericos']));
+      else if (d < 12) meals.push(meal(t, ['Leche', 'Pan']));
+      else meals.push(meal(t, ['Arroz']));
+      if (d < 12) symptoms.push(sym('hinchazon', t + 2 * H, 6));
+      meals.push(meal(t + 8 * H, ['Pollo']));
+    }
+    const r = analyze(input(meals, symptoms));
+    const leche = r.profiles.find((p) => p.key === 'leche')!.signals.find((s) => s.outcome === 'hinchazon')!;
+    expect(leche.strength).toBe('repetida');
+    expect(leche.explainedBy).toBeUndefined();
+    const pericos = r.profiles.find((p) => p.key === 'huevos pericos')!;
+    const s = pericos.signals.find((x) => x.outcome === 'hinchazon')!;
+    expect(s.strength).toBe('posible');
+    expect(s.explainedBy?.key).toBe('leche');
+    expect(s.message).toContain('no se pueden separar');
+    expect(pericos.suggestion).toBe('a_medias');
+  });
+
+  it('rebaja la señal si el alimento sin el otro no se asocia', () => {
+    const meals: Meal[] = [];
+    const symptoms: Symptom[] = [];
+    for (let d = 0; d < 16; d++) {
+      const t = T0 + d * D + 8 * H;
+      if (d < 6) meals.push(meal(t, ['Leche', 'Tomate']));
+      else if (d < 10) meals.push(meal(t, ['Leche']));
+      else if (d < 13) meals.push(meal(t, ['Tomate', 'Arroz']));
+      else meals.push(meal(t, ['Arroz']));
+      if (d < 10) symptoms.push(sym('hinchazon', t + 2 * H, 6));
+      meals.push(meal(t + 8 * H, ['Pollo']));
+    }
+    const r = analyze(input(meals, symptoms));
+    const tomate = r.profiles.find((p) => p.key === 'tomate')!;
+    expect(r.signals.some((s) => s.foodKey === 'tomate')).toBe(false);
+    expect(tomate.signals.find((s) => s.outcome === 'hinchazon')?.explainedBy?.key).toBe('leche');
+  });
+});

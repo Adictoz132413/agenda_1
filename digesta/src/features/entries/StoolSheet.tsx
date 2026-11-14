@@ -15,8 +15,8 @@ import { Button, Chip, Field, IconButton, IntensitySlider, Segmented, Sheet, Tex
 
 type Draft = Omit<Stool, 'id' | 'createdAt' | 'updatedAt' | 'bristol'> & { bristol?: BristolType };
 
-const empty = (): Draft => ({
-  at: Date.now(),
+const empty = (at = Date.now()): Draft => ({
+  at,
   bristol: undefined,
   color: 'marron',
   amount: 'normal',
@@ -29,7 +29,7 @@ const empty = (): Draft => ({
   notes: '',
 });
 
-export function StoolSheet({ open, onClose, stool, onAlerts }: { open: boolean; onClose: () => void; stool?: Stool; onAlerts: (a: MedicalAlert[]) => void }) {
+export function StoolSheet({ open, onClose, stool, initialAt, onAlerts }: { open: boolean; onClose: () => void; stool?: Stool; initialAt?: number; onAlerts: (a: MedicalAlert[]) => void }) {
   const toast = useToast();
   const confirm = useConfirm();
   const [d, setD] = useState<Draft>(empty);
@@ -39,11 +39,11 @@ export function StoolSheet({ open, onClose, stool, onAlerts }: { open: boolean; 
 
   useEffect(() => {
     if (open) {
-      setD(stool ? { ...stool, notes: stool.notes ?? '' } : empty());
+      setD(stool ? { ...stool, notes: stool.notes ?? '' } : empty(initialAt));
       setMore(!!stool);
       setError(undefined);
     }
-  }, [open, stool]);
+  }, [open, stool, initialAt]);
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((x) => ({ ...x, [k]: v }));
   const anyPain = d.pain.before || d.pain.during || d.pain.after;

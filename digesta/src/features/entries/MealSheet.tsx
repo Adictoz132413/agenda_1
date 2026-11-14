@@ -23,6 +23,8 @@ export interface MealSheetProps {
   meal?: Meal;
   /** Plantilla para duplicar (se guarda como comida nueva). */
   template?: Partial<Meal>;
+  /** Hora inicial para una comida nueva (p. ej. al registrar desde un día pasado). */
+  initialAt?: number;
   onAddSymptom?: () => void;
 }
 
@@ -38,8 +40,8 @@ interface Draft {
   feelingAfter?: FeelingAfter;
 }
 
-function draftFrom(meal?: Partial<Meal>, keepTime = false): Draft {
-  const now = Date.now();
+function draftFrom(meal?: Partial<Meal>, keepTime = false, initialAt?: number): Draft {
+  const now = initialAt ?? Date.now();
   const derived = deriveFlags(meal?.itemKeys ?? []);
   const flags = meal?.flags ?? [];
   return {
@@ -55,11 +57,11 @@ function draftFrom(meal?: Partial<Meal>, keepTime = false): Draft {
   };
 }
 
-export function MealSheet({ open, onClose, meal, template, onAddSymptom }: MealSheetProps) {
+export function MealSheet({ open, onClose, meal, template, initialAt, onAddSymptom }: MealSheetProps) {
   const toast = useToast();
   const confirm = useConfirm();
   const settings = useSettings();
-  const [d, setD] = useState<Draft>(() => draftFrom(meal ?? template, !!meal));
+  const [d, setD] = useState<Draft>(() => draftFrom(meal ?? template, !!meal, initialAt));
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
   const [favName, setFavName] = useState('');
@@ -68,13 +70,13 @@ export function MealSheet({ open, onClose, meal, template, onAddSymptom }: MealS
 
   useEffect(() => {
     if (open) {
-      setD(draftFrom(meal ?? template, !!meal));
+      setD(draftFrom(meal ?? template, !!meal, initialAt));
       setError(undefined);
       setSaveAsFav(false);
       setFavName('');
       setMore(!!meal && !!(meal.notes || meal.supplements.length || meal.photoId || meal.feelingAfter));
     }
-  }, [open, meal, template]);
+  }, [open, meal, template, initialAt]);
 
   const itemKeys = useMemo(() => {
     const s = new Set<string>();

@@ -13,8 +13,8 @@ import { FactorsSheet } from './FactorsSheet';
 import { AlertDialog } from './AlertDialog';
 
 interface EntryApi {
-  openMeal: (opts?: { meal?: Meal; template?: Partial<Meal> }) => void;
-  openStool: (stool?: Stool) => void;
+  openMeal: (opts?: { meal?: Meal; template?: Partial<Meal>; at?: number }) => void;
+  openStool: (stool?: Stool, opts?: { at?: number }) => void;
   openSymptom: (opts?: { symptom?: Symptom; type?: SymptomType; at?: number }) => void;
   openFactors: (day?: string) => void;
   showAlerts: (a: MedicalAlert[]) => void;
@@ -24,8 +24,8 @@ const Ctx = createContext<EntryApi | null>(null);
 
 type State =
   | { kind: 'none' }
-  | { kind: 'meal'; meal?: Meal; template?: Partial<Meal> }
-  | { kind: 'stool'; stool?: Stool }
+  | { kind: 'meal'; meal?: Meal; template?: Partial<Meal>; at?: number }
+  | { kind: 'stool'; stool?: Stool; at?: number }
   | { kind: 'symptom'; symptom?: Symptom; type?: SymptomType; at?: number }
   | { kind: 'factors'; day: string };
 
@@ -44,7 +44,7 @@ export function EntryProvider({ children }: { children: ReactNode }) {
   const api = useMemo<EntryApi>(
     () => ({
       openMeal: (o) => open({ kind: 'meal', ...o }),
-      openStool: (stool) => open({ kind: 'stool', stool }),
+      openStool: (stool, o) => open({ kind: 'stool', stool, at: o?.at }),
       openSymptom: (o) => open({ kind: 'symptom', symptom: o?.symptom, type: o?.type, at: o?.at }),
       openFactors: (day) => open({ kind: 'factors', day: day ?? todayKey() }),
       showAlerts: (a) => setAlerts(a),
@@ -62,9 +62,10 @@ export function EntryProvider({ children }: { children: ReactNode }) {
         onClose={close}
         meal={s.kind === 'meal' ? s.meal : undefined}
         template={s.kind === 'meal' ? s.template : undefined}
+        initialAt={s.kind === 'meal' ? s.at : undefined}
         onAddSymptom={s.kind === 'meal' && s.meal ? () => open({ kind: 'symptom', at: Date.now() }) : undefined}
       />
-      <StoolSheet open={state.kind === 'stool'} onClose={close} stool={s.kind === 'stool' ? s.stool : undefined} onAlerts={setAlerts} />
+      <StoolSheet open={state.kind === 'stool'} onClose={close} stool={s.kind === 'stool' ? s.stool : undefined} initialAt={s.kind === 'stool' ? s.at : undefined} onAlerts={setAlerts} />
       <SymptomSheet
         open={state.kind === 'symptom'}
         onClose={close}
